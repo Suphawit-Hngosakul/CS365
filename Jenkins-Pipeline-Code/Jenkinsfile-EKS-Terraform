@@ -10,61 +10,81 @@ pipeline {
     stages {
         stage('Checkout from Git') {
             steps {
-                git branch: 'master', url: 'https://github.com/AmanPathak-DevOps/End-to-End-Kubernetes-DevSecOps-Tetris-Project.git'
+                git branch: 'main', url: 'https://github.com/Suphawit-Hngosakul/CS365.git'
             }
         }
+
         stage('Initializing Terraform') {
             steps {
-                withAWS(credentials: 'aws-key', region: 'us-east-1') {
                 dir('EKS-TF') {
-                    script {
-                        sh 'terraform init'
-                    }
-                }
-                }
-            }
-        }
-        stage('Validate Terraform Code') {
-            steps {
-                withAWS(credentials: 'aws-key', region: 'us-east-1') {
-                dir('EKS-TF') {
-                    script {
-                        sh 'terraform validate'
-                    }
-                }
-                }
-            }
-        }
-        stage('Terraform Plan') {
-            steps {
-                withAWS(credentials: 'aws-key', region: 'us-east-1') {
-                dir('EKS-TF') {
-                    script {
-                        sh "terraform plan -var-file=${params.'File-Name'}"
-                    }
-                }
-                }
-            }
-        }
-        stage('Terraform Action') {
-            steps {
-                withAWS(credentials: 'aws-key', region: 'us-east-1') {
-                script {
-                    echo "${params.'Terraform-Action'}"
-                    dir('EKS-TF') {
-                        script {
-                            if (params.'Terraform-Action' == 'plan') {
-                                sh "terraform plan -var-file=${params.'File-Name'}"
-                            } else if (params.'Terraform-Action' == 'apply') {
-                                sh "terraform apply -auto-approve -var-file=${params.'File-Name'}"
-                            } else if (params.'Terraform-Action' == 'destroy') {
-                                sh "terraform destroy -auto-approve -var-file=${params.'File-Name'}"
-                            } else {
-                                error "Invalid value for Terraform-Action: ${params.'Terraform-Action'}"
-                            }
+                    withCredentials([
+                        string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                        string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
+                        string(credentialsId: 'aws-session-token', variable: 'AWS_SESSION_TOKEN')
+                    ]) {
+                        withEnv(['AWS_DEFAULT_REGION=us-east-1']) {
+                            sh 'terraform init'
                         }
                     }
                 }
+            }
+        }
+
+        stage('Validate Terraform Code') {
+            steps {
+                dir('EKS-TF') {
+                    withCredentials([
+                        string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                        string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
+                        string(credentialsId: 'aws-session-token', variable: 'AWS_SESSION_TOKEN')
+                    ]) {
+                        withEnv(['AWS_DEFAULT_REGION=us-east-1']) {
+                            sh 'terraform validate'
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                dir('EKS-TF') {
+                    withCredentials([
+                        string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                        string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
+                        string(credentialsId: 'aws-session-token', variable: 'AWS_SESSION_TOKEN')
+                    ]) {
+                        withEnv(['AWS_DEFAULT_REGION=us-east-1']) {
+                            sh "terraform plan -var-file=${params.'File-Name'}"
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Terraform Action') {
+            steps {
+                dir('EKS-TF') {
+                    withCredentials([
+                        string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                        string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
+                        string(credentialsId: 'aws-session-token', variable: 'AWS_SESSION_TOKEN')
+                    ]) {
+                        withEnv(['AWS_DEFAULT_REGION=us-east-1']) {
+                            script {
+                                echo "${params.'Terraform-Action'}"
+                                if (params.'Terraform-Action' == 'plan') {
+                                    sh "terraform plan -var-file=${params.'File-Name'}"
+                                } else if (params.'Terraform-Action' == 'apply') {
+                                    sh "terraform apply -auto-approve -var-file=${params.'File-Name'}"
+                                } else if (params.'Terraform-Action' == 'destroy') {
+                                    sh "terraform destroy -auto-approve -var-file=${params.'File-Name'}"
+                                } else {
+                                    error "Invalid value for Terraform-Action: ${params.'Terraform-Action'}"
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
