@@ -22,7 +22,7 @@ const StartButton = styled.button`
 	vertical-align: middle;
 	text-decoration: none;
 	transition: all 0.5s;
-	color: #95190c;
+	color: #cb8f8f;
 	border-right: 1px solid #eee;
 	border-radius: 2px;
 	border-bottom: 1px solid #ccc;
